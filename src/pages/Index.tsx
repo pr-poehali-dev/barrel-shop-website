@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import emailjs from '@emailjs/browser';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -76,40 +75,41 @@ const Index = () => {
     
     const product = products.find(p => p.id === selectedProduct);
     
-    // Инициализация EmailJS (используйте ваши реальные ключи)
-    emailjs.init("YOUR_PUBLIC_KEY"); // Замените на ваш Public Key из EmailJS
-    
-    const templateParams = {
-      to_email: 'artemtroshin57@gmail.com',
-      from_name: 'БаниБочки.РФ',
-      product_name: product?.name,
-      product_price: product?.price.toLocaleString(),
-      customer_phone: phoneNumber,
-      message: `Новая заявка на банную бочку!
-      
+    // Отправка через Formspree
+    const formData = new FormData();
+    formData.append('product_name', product?.name || '');
+    formData.append('product_price', `${product?.price.toLocaleString()} ₽`);
+    formData.append('customer_phone', phoneNumber);
+    formData.append('message', `Новая заявка на банную бочку!
+
 Товар: ${product?.name}
 Цена: ${product?.price.toLocaleString()} ₽
 Телефон клиента: ${phoneNumber}
 
-Свяжитесь с клиентом в ближайшее время.`
-    };
+Свяжитесь с клиентом в ближайшее время.`);
 
     try {
-      await emailjs.send(
-        'YOUR_SERVICE_ID', // Замените на ваш Service ID
-        'YOUR_TEMPLATE_ID', // Замените на ваш Template ID  
-        templateParams
-      );
-      
-      toast({
-        title: "Заявка отправлена!",
-        description: "Мы свяжемся с вами в ближайшее время.",
+      const response = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
       });
-      
-      setPhoneNumber('');
-      setSelectedProduct(null);
+
+      if (response.ok) {
+        toast({
+          title: "Заявка отправлена!",
+          description: "Мы свяжемся с вами в ближайшее время.",
+        });
+        
+        setPhoneNumber('');
+        setSelectedProduct(null);
+      } else {
+        throw new Error('Ошибка отправки');
+      }
     } catch (error) {
-      console.error('Ошибка отправки email:', error);
+      console.error('Ошибка отправки:', error);
       toast({
         title: "Ошибка отправки",
         description: "Попробуйте еще раз или свяжитесь с нами по телефону.",
