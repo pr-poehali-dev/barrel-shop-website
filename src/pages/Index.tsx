@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import emailjs from '@emailjs/browser';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -74,23 +75,47 @@ const Index = () => {
     if (!phoneNumber || !selectedProduct) return;
     
     const product = products.find(p => p.id === selectedProduct);
-    const message = `Новая заявка на банную бочку!\n\nТовар: ${product?.name}\nЦена: ${product?.price.toLocaleString()} ₽\nТелефон: ${phoneNumber}`;
     
-    // Отправка в Telegram
-    const telegramUrl = `https://t.me/Andrpn`;
-    window.open(telegramUrl, '_blank');
+    // Инициализация EmailJS (используйте ваши реальные ключи)
+    emailjs.init("YOUR_PUBLIC_KEY"); // Замените на ваш Public Key из EmailJS
     
-    // Отправка на email (через mailto)
-    const emailUrl = `mailto:artemtroshin57@gmail.com?subject=Заявка на банную бочку&body=${encodeURIComponent(message)}`;
-    window.open(emailUrl, '_blank');
-    
-    toast({
-      title: "Заявка отправлена!",
-      description: "Мы свяжемся с вами в ближайшее время.",
-    });
-    
-    setPhoneNumber('');
-    setSelectedProduct(null);
+    const templateParams = {
+      to_email: 'artemtroshin57@gmail.com',
+      from_name: 'БаниБочки.РФ',
+      product_name: product?.name,
+      product_price: product?.price.toLocaleString(),
+      customer_phone: phoneNumber,
+      message: `Новая заявка на банную бочку!
+      
+Товар: ${product?.name}
+Цена: ${product?.price.toLocaleString()} ₽
+Телефон клиента: ${phoneNumber}
+
+Свяжитесь с клиентом в ближайшее время.`
+    };
+
+    try {
+      await emailjs.send(
+        'YOUR_SERVICE_ID', // Замените на ваш Service ID
+        'YOUR_TEMPLATE_ID', // Замените на ваш Template ID  
+        templateParams
+      );
+      
+      toast({
+        title: "Заявка отправлена!",
+        description: "Мы свяжемся с вами в ближайшее время.",
+      });
+      
+      setPhoneNumber('');
+      setSelectedProduct(null);
+    } catch (error) {
+      console.error('Ошибка отправки email:', error);
+      toast({
+        title: "Ошибка отправки",
+        description: "Попробуйте еще раз или свяжитесь с нами по телефону.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
